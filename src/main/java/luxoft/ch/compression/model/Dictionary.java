@@ -8,6 +8,7 @@ import java.io.Reader;
 import java.net.URISyntaxException;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,11 +18,15 @@ import java.util.Optional;
 import luxoft.ch.compression.CompressionException;
 
 import java.util.StringJoiner;
+import java.util.stream.Stream;
 
 public class Dictionary {
 
-	public static final int INITIAL_TOKEN_LENGTH = 2;
+	private static final int INITIAL_TOKEN_LENGTH = 2;
 	private static final int BUFFER_CAPACITY = 1 * 1024 * 1024;
+
+	private static final Comparator<Entry<String, List<Integer>>> TOKEN_TOTAL_SPACE_REVERSED_COMPARATOR = Comparator
+			.comparingInt(Dictionary::getTokenTotalSpace).reversed();
 
 	private final Map<String, List<Integer>> tokens;
 	private final CharBuffer buffer;
@@ -70,11 +75,11 @@ public class Dictionary {
 		}
 	}
 
-	private boolean isSolitary(Entry<String, List<Integer>> entry) {
+	private static boolean isSolitary(Entry<String, List<Integer>> entry) {
 		return entry.getValue().size() <= 1;
 	}
 
-	private boolean hasLength(Entry<String, List<Integer>> entry, int length) {
+	private static boolean hasLength(Entry<String, List<Integer>> entry, int length) {
 		return entry.getKey().length() == length;
 	}
 
@@ -135,6 +140,14 @@ public class Dictionary {
 			return Optional.empty();
 		}
 		return Optional.of(buffer.get(nextCharIndex));
+	}
+
+	public Stream<Entry<String, List<Integer>>> getStreamOfTokensSortedByTotalSpaceReversed() {
+		return tokens.entrySet().stream().sorted(TOKEN_TOTAL_SPACE_REVERSED_COMPARATOR);
+	}
+
+	private static int getTokenTotalSpace(Entry<String, List<Integer>> entry) {
+		return entry.getKey().length() * entry.getValue().size();
 	}
 
 	@Override

@@ -15,14 +15,8 @@ public class Compressor {
 		dictionary.extractTokens();
 	}
 
-	public Dictionary getDictionary() {
+	Dictionary getDictionary() {
 		return dictionary;
-	}
-
-	public static void main(String... args) {
-		Compressor compressor = new Compressor("source.txt");
-		compressor.extractTokens();
-		System.out.println(compressor.getDictionary());
 	}
 
 }
