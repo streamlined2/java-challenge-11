@@ -83,14 +83,14 @@ public class Dictionary {
 		return entry.getKey().length() == length;
 	}
 
-	public void extractTokens() {
+	public void growLargerTokens() {
 		int tokenLength = INITIAL_TOKEN_LENGTH;
-		while (extractTokensOfLength(tokenLength) > 0) {
+		while (growTokensOfLength(tokenLength) > 0) {
 			tokenLength++;
 		}
 	}
 
-	private int extractTokensOfLength(int tokenLength) {
+	private int growTokensOfLength(int tokenLength) {
 		Map<String, List<Integer>> newTokenEntries = new HashMap<>();
 		for (var tokenIter = tokens.entrySet().iterator(); tokenIter.hasNext();) {
 			final var token = tokenIter.next();
@@ -142,7 +142,7 @@ public class Dictionary {
 		return Optional.of(buffer.get(nextCharIndex));
 	}
 
-	public Stream<Entry<String, List<Integer>>> getStreamOfTokensSortedByTotalSpaceReversed() {
+	public Stream<Entry<String, List<Integer>>> getTokensByTotalSpaceReversed() {
 		return tokens.entrySet().stream().sorted(TOKEN_TOTAL_SPACE_REVERSED_COMPARATOR);
 	}
 
