@@ -1,11 +1,19 @@
 package luxoft.ch.compression.tool;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
+
+import luxoft.ch.compression.CompressionException;
 import luxoft.ch.compression.model.Dictionary;
 import luxoft.ch.compression.model.Token;
 import luxoft.ch.compression.model.TokenEntry;
@@ -22,25 +30,44 @@ public class Compressor {
 		tokenChain = new TreeMap<>();
 		dictionary.initialize(sourceFileName);
 	}
-	
-	public Dictionary getDictionary() {
-		return dictionary;
-	}
 
-	public Set<Token> getTokens() {
-		return tokens;
-	}
-
-	public NavigableMap<Integer, TokenEntry> getTokenChain() {
-		return tokenChain;
-	}
-
-	public void process() {
+	public void compress() {
 		dictionary.growLargerTokens();
-		formTokenChain();
+		formSetOfTokensAndChain();
 	}
 
-	private void formTokenChain() {
+	public void save(String targetFileName) {
+		try (ObjectOutputStream outStream = new ObjectOutputStream(
+				new BufferedOutputStream(new FileOutputStream(new File(targetFileName))))) {
+			outStream.writeObject(tokens);
+			outStream.writeObject(tokenChain);
+			outStream.writeObject(collectOriginalRanges());
+		} catch (IOException e) {
+			throw new CompressionException("cannot open file %s".formatted(targetFileName), e);
+		}
+	}
+
+	private List<String> collectOriginalRanges() {
+		List<String> ranges = new ArrayList<>();
+		int start = 0;
+		for (var iter = tokenChain.values().iterator(); iter.hasNext();) {
+			var tokenEntry = iter.next();
+			ranges.add(getOriginalData(start, tokenEntry.startPosition()));
+			start = tokenEntry.endPosition() + 1;
+		}
+		ranges.add(getOriginalData(start, dictionary.getCharCount()));
+		return ranges;
+	}
+
+	private String getOriginalData(int start, int finish) {
+		StringBuilder builder = new StringBuilder();
+		for (int index = start; index < finish; index++) {
+			builder.append(dictionary.getNextChar(index));
+		}
+		return builder.toString();
+	}
+
+	private void formSetOfTokensAndChain() {
 		int tokenId = 0;
 		for (var iter = dictionary.getTokensByTotalSpaceReversed().iterator(); iter.hasNext();) {
 			var token = iter.next();

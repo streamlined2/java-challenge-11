@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.net.URISyntaxException;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -50,8 +49,7 @@ public class Dictionary {
 	}
 
 	public void initialize(String sourceFileName) {
-		try (Reader reader = new BufferedReader(
-				new FileReader(new File(getClass().getClassLoader().getResource(sourceFileName).toURI())))) {
+		try (Reader reader = new BufferedReader(new FileReader(new File(sourceFileName)))) {
 			reader.read(buffer);
 			buffer.flip();
 			char[] tokenData = new char[Dictionary.INITIAL_TOKEN_LENGTH];
@@ -61,7 +59,7 @@ public class Dictionary {
 				addTokenEntry(String.valueOf(tokenData), index);
 			}
 			deleteSolitaries(Dictionary.INITIAL_TOKEN_LENGTH);
-		} catch (IOException | URISyntaxException e) {
+		} catch (IOException e) {
 			throw new CompressionException("cannot open file %s".formatted(sourceFileName), e);
 		}
 	}
@@ -140,6 +138,18 @@ public class Dictionary {
 			return Optional.empty();
 		}
 		return Optional.of(buffer.get(nextCharIndex));
+	}
+
+	public char getNextChar(int index) {
+		if (index >= buffer.limit()) {
+			throw new CompressionException(
+					"wrong index %d greater than buffer limit %d".formatted(index, buffer.limit()));
+		}
+		return buffer.get(index);
+	}
+
+	public int getCharCount() {
+		return buffer.limit();
 	}
 
 	public Stream<Entry<String, List<Integer>>> getTokensByTotalSpaceReversed() {

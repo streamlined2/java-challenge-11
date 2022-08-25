@@ -1,6 +1,8 @@
 package luxoft.ch.compression.model;
 
-public record Token(int id, String value) implements Comparable<Token> {
+import java.io.Serializable;
+
+public record Token(int id, String value) implements Comparable<Token>, Serializable {
 
 	@Override
 	public int hashCode() {

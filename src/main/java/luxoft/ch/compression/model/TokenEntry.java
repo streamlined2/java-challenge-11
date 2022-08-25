@@ -1,8 +1,11 @@
 package luxoft.ch.compression.model;
 
+import java.io.Serializable;
+
 import luxoft.ch.compression.CompressionException;
 
-public record TokenEntry(int tokenId, int startPosition, int endPosition) implements Comparable<TokenEntry> {
+public record TokenEntry(int tokenId, int startPosition, int endPosition)
+		implements Comparable<TokenEntry>, Serializable {
 
 	public TokenEntry {
 		if (startPosition > endPosition)
