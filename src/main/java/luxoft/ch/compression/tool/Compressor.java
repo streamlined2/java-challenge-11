@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import luxoft.ch.compression.CompressionException;
 import luxoft.ch.compression.model.Dictionary;
@@ -29,6 +31,14 @@ public class Compressor {
 		tokens = new HashSet<>();
 		tokenChain = new TreeMap<>();
 		dictionary.initialize(sourceFileName);
+	}
+
+	public SortedSet<Token> getTokens() {
+		return new TreeSet<>(tokens);
+	}
+
+	public SortedSet<TokenEntry> getTokenEntries() {
+		return new TreeSet<>(tokenChain.values());
 	}
 
 	public void compress() {

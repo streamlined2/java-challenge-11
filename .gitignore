@@ -5,6 +5,7 @@
 .settings
 *.log
 *.log.*
+*.data
 
 # Compiled class file
 *.class

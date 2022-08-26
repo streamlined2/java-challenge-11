@@ -12,11 +12,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
-
+import java.util.NavigableMap;
 import luxoft.ch.compression.CompressionException;
 
 import java.util.StringJoiner;
+import java.util.TreeMap;
 import java.util.stream.Stream;
 
 public class Dictionary {
@@ -26,12 +26,14 @@ public class Dictionary {
 
 	private static final Comparator<Entry<String, List<Integer>>> TOKEN_TOTAL_SPACE_REVERSED_COMPARATOR = Comparator
 			.comparingInt(Dictionary::getTokenTotalSpace).reversed();
+	private static final Comparator<String> MAP_KEY_COMPARATOR = Comparator.comparingInt(String::length)
+			.thenComparing(String::compareTo);
 
-	private final Map<String, List<Integer>> tokens;
+	private final NavigableMap<String, List<Integer>> tokens;
 	private final CharBuffer buffer;
 
 	public Dictionary() {
-		tokens = new HashMap<>();
+		tokens = new TreeMap<>(MAP_KEY_COMPARATOR);
 		this.buffer = CharBuffer.allocate(BUFFER_CAPACITY);
 	}
 
@@ -43,9 +45,11 @@ public class Dictionary {
 		var entries = tokens.get(token);
 		if (entries == null) {
 			entries = new ArrayList<>();
+			entries.add(entryIndex);
+			tokens.put(token, entries);
+		} else {
+			entries.add(entryIndex);
 		}
-		entries.add(entryIndex);
-		tokens.put(token, entries);
 	}
 
 	public void initialize(String sourceFileName) {
@@ -58,16 +62,16 @@ public class Dictionary {
 				buffer.get(index, tokenData);
 				addTokenEntry(String.valueOf(tokenData), index);
 			}
-			deleteSolitaries(Dictionary.INITIAL_TOKEN_LENGTH);
+			deleteSolitaries();
 		} catch (IOException e) {
 			throw new CompressionException("cannot open file %s".formatted(sourceFileName), e);
 		}
 	}
 
-	private void deleteSolitaries(int length) {
+	private void deleteSolitaries() {
 		for (var iter = tokens.entrySet().iterator(); iter.hasNext();) {
 			var entry = iter.next();
-			if (isSolitary(entry) && hasLength(entry, length)) {
+			if (isSolitary(entry)) {
 				iter.remove();
 			}
 		}
@@ -75,10 +79,6 @@ public class Dictionary {
 
 	private static boolean isSolitary(Entry<String, List<Integer>> entry) {
 		return entry.getValue().size() <= 1;
-	}
-
-	private static boolean hasLength(Entry<String, List<Integer>> entry, int length) {
-		return entry.getKey().length() == length;
 	}
 
 	public void growLargerTokens() {
@@ -90,17 +90,33 @@ public class Dictionary {
 
 	private int growTokensOfLength(int tokenLength) {
 		Map<String, List<Integer>> newTokenEntries = new HashMap<>();
-		for (var tokenIter = tokens.entrySet().iterator(); tokenIter.hasNext();) {
+		final String startKey = getStartKeyOf(tokenLength);
+		for (var tokenIter = tokens.tailMap(startKey, true).entrySet().iterator(); tokenIter.hasNext();) {
 			final var token = tokenIter.next();
-			if (hasLength(token, tokenLength) && !isSolitary(token)) {
+			if (!hasLength(token, tokenLength)) {
+				break;
+			}
+			if (!isSolitary(token)) {
 				expandTokenEntries(newTokenEntries, token);
-				if (isSolitary(token)) {
-					tokenIter.remove();
-				}
+			}
+			if (isSolitary(token)) {
+				tokenIter.remove();
 			}
 		}
 		tokens.putAll(newTokenEntries);
 		return newTokenEntries.size();
+	}
+
+	private static String getStartKeyOf(int tokenLength) {
+		StringBuilder builder = new StringBuilder();
+		for (int index = 0; index < tokenLength; index++) {
+			builder.append('\0');
+		}
+		return builder.toString();
+	}
+
+	private static boolean hasLength(Entry<String, List<Integer>> entry, int length) {
+		return entry.getKey().length() == length;
 	}
 
 	private int expandTokenEntries(Map<String, List<Integer>> newTokenEntries,
@@ -109,11 +125,12 @@ public class Dictionary {
 		Map<Character, Integer> charEntries = countCharEntries(tokenEntry);
 		for (var indexIter = tokenEntry.getValue().iterator(); indexIter.hasNext();) {
 			final int index = indexIter.next();
-			final Optional<Character> nextChar = getNextChar(tokenEntry, index);
-			if (nextChar.isPresent()) {
-				final Integer charCount = charEntries.get(nextChar.get());
+			final int charIndex = nextCharIndex(tokenEntry, index);
+			if (charIndex < getCharCount()) {
+				final char nextChar = getNextChar(charIndex);
+				final Integer charCount = charEntries.get(nextChar);
 				if (charCount != null && charCount.intValue() > 1) {
-					String expandedToken = tokenEntry.getKey() + nextChar.get();
+					final String expandedToken = tokenEntry.getKey() + nextChar;
 					addTokenEntry(newTokenEntries, expandedToken, index);
 					indexIter.remove();
 					expandedTokenEntries++;
@@ -123,21 +140,20 @@ public class Dictionary {
 		return expandedTokenEntries;
 	}
 
+	private int nextCharIndex(Entry<String, List<Integer>> tokenEntry, final int startIndex) {
+		return startIndex + tokenEntry.getKey().length();
+	}
+
 	private Map<Character, Integer> countCharEntries(Entry<String, List<Integer>> tokenEntry) {
 		Map<Character, Integer> counts = new HashMap<>();
 		for (var index : tokenEntry.getValue()) {
-			getNextChar(tokenEntry, index)
-					.ifPresent(nextChar -> counts.merge(nextChar, 1, (oldValue, value) -> oldValue + 1));
+			final int charIndex = nextCharIndex(tokenEntry, index);
+			if (charIndex < getCharCount()) {
+				final char nextChar = getNextChar(charIndex);
+				counts.merge(nextChar, 1, (oldValue, value) -> oldValue + 1);
+			}
 		}
 		return counts;
-	}
-
-	private Optional<Character> getNextChar(Entry<String, List<Integer>> tokenEntry, int index) {
-		final int nextCharIndex = index + tokenEntry.getKey().length();
-		if (nextCharIndex >= buffer.limit()) {
-			return Optional.empty();
-		}
-		return Optional.of(buffer.get(nextCharIndex));
 	}
 
 	public char getNextChar(int index) {
