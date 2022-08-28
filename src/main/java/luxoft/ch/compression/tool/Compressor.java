@@ -22,6 +22,8 @@ import luxoft.ch.compression.model.TokenEntry;
 
 public class Compressor {
 
+	private static final int MIN_TOKEN_LENGTH = 10;
+
 	private final Dictionary dictionary;
 	private final Set<Token> tokens;
 	private final NavigableMap<Integer, TokenEntry> tokenChain;
@@ -79,7 +81,7 @@ public class Compressor {
 
 	private void formSetOfTokensAndChain() {
 		int tokenId = 0;
-		for (var iter = dictionary.getTokensByTotalSpaceReversed().iterator(); iter.hasNext();) {
+		for (var iter = dictionary.getTokensByTotalSpaceReversed(MIN_TOKEN_LENGTH).iterator(); iter.hasNext();) {
 			var token = iter.next();
 			if (atLeastTwoTokenEntriesMayBeApplied(token)) {
 				tokens.add(new Token(tokenId, token.getKey()));
