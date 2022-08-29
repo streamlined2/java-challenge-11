@@ -9,10 +9,11 @@ public class Driver {
 		Compressor compressor = new Compressor("real-sample.txt");
 		compressor.compress();
 		//System.out.println("sorted set of tokens:\n" + compressor.getTokens());
-		//System.out.println("sorted set of token entries:\n" + compressor.getTokenEntries());
+		//System.out.println("sorted set of ranges:\n" + compressor.getRanges());
 		compressor.save("compressed.data");
 		Decompressor decompressor = new Decompressor("compressed.data");
-		decompressor.decompressAndSave("uncompressed.data");
+		decompressor.decompress();
+		decompressor.save("uncompressed.data");
 	}
 
 }

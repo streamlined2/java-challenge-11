@@ -90,7 +90,6 @@ public class Dictionary {
 
 	private int growTokensOfLength(int tokenLength) {
 		Map<String, List<Integer>> newTokenEntries = new HashMap<>();
-		Map<String, List<Integer>> tokenEntriesToBeRemoved = new HashMap<>();
 		final String startKey = getStartKeyOf(tokenLength);
 		for (var tokenIter = tokens.tailMap(startKey, true).entrySet().iterator(); tokenIter.hasNext();) {
 			final var token = tokenIter.next();
@@ -98,27 +97,14 @@ public class Dictionary {
 				break;
 			}
 			if (!isSolitary(token)) {
-				expandTokenEntries(newTokenEntries, tokenEntriesToBeRemoved, token);
+				expandTokenEntries(newTokenEntries, token);
 			}
 			if (isSolitary(token)) {
 				tokenIter.remove();
 			}
 		}
 		tokens.putAll(newTokenEntries);
-		// removeTokenEntries(tokenEntriesToBeRemoved);
 		return newTokenEntries.size();
-	}
-
-	private void removeTokenEntries(Map<String, List<Integer>> tokenEntriesToBeRemoved) {
-		for (final var entryToRemove : tokenEntriesToBeRemoved.entrySet()) {
-			tokens.computeIfPresent(entryToRemove.getKey(), (String token, List<Integer> indices) -> {
-				indices.removeAll(entryToRemove.getValue());
-				if (indices.isEmpty()) {
-					return null;
-				}
-				return indices;
-			});
-		}
 	}
 
 	private static String getStartKeyOf(int tokenLength) {
@@ -134,7 +120,7 @@ public class Dictionary {
 	}
 
 	private int expandTokenEntries(Map<String, List<Integer>> newTokenEntries,
-			Map<String, List<Integer>> tokenEntriesToBeRemoved, Entry<String, List<Integer>> tokenEntry) {
+			Entry<String, List<Integer>> tokenEntry) {
 		int expandedTokenEntries = 0;
 		Map<Character, Integer> charEntries = countCharEntries(tokenEntry);
 		for (var indexIter = tokenEntry.getValue().iterator(); indexIter.hasNext();) {
@@ -146,22 +132,12 @@ public class Dictionary {
 				if (charCount != null && charCount.intValue() > 1) {
 					final String expandedToken = tokenEntry.getKey() + nextChar;
 					addTokenEntry(newTokenEntries, expandedToken, index);
-					// removeReducedTokens(tokenEntriesToBeRemoved, tokenEntry, index);
 					indexIter.remove();
 					expandedTokenEntries++;
 				}
 			}
 		}
 		return expandedTokenEntries;
-	}
-
-	private void removeReducedTokens(Map<String, List<Integer>> tokenEntriesToBeRemoved,
-			Entry<String, List<Integer>> tokenEntry, final int index) {
-		final int length = tokenEntry.getKey().length();
-		for (int offset = 1; offset < length; offset++) {
-			final String reducedToken = tokenEntry.getKey().substring(offset);
-			addTokenEntry(tokenEntriesToBeRemoved, reducedToken, index + offset);
-		}
 	}
 
 	private int nextCharIndex(Entry<String, List<Integer>> tokenEntry, final int startIndex) {
@@ -183,9 +159,20 @@ public class Dictionary {
 	public char getNextChar(int index) {
 		if (index >= buffer.limit()) {
 			throw new CompressionException(
-					"wrong index %d greater than buffer limit %d".formatted(index, buffer.limit()));
+					"wrong index %d greater or equal than buffer limit %d".formatted(index, buffer.limit()));
 		}
 		return buffer.get(index);
+	}
+
+	public char[] getChars(int startIndex, int length) {
+		final int size = Math.max(Math.min(length, buffer.limit() - startIndex), 0);
+		char[] data = new char[size];
+		buffer.get(startIndex, data);
+		return data;
+	}
+
+	public char[] getChars(int startIndex) {
+		return getChars(startIndex, getCharCount());
 	}
 
 	public int getCharCount() {
