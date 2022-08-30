@@ -3,16 +3,13 @@ package luxoft.ch.compression.model;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.Stream.Builder;
 
@@ -112,7 +109,9 @@ public class Stash implements Iterable<Map.Entry<String, int[]>>, Serializable {
 	public boolean isTokenEntryMayBeApplied(int startPosition, int endPosition) {
 		for (var entry : tokenEntries.entrySet()) {
 			final int tokenLength = entry.getKey().length();
-			for (var start : entry.getValue()) {
+			final int startIndex = getStartIndex(entry.getValue(), startPosition);
+			for (int index = startIndex; index < entry.getValue().length; index++) {
+				final int start = entry.getValue()[index];
 				final int end = start + tokenLength - 1;
 				if (start > endPosition) {
 					break;
@@ -123,6 +122,14 @@ public class Stash implements Iterable<Map.Entry<String, int[]>>, Serializable {
 			}
 		}
 		return true;
+	}
+
+	private int getStartIndex(int[] indices, int key) {
+		int startIndex = Arrays.binarySearch(indices, key);
+		if (startIndex >= 0) {
+			return startIndex;
+		}
+		return Math.max(-startIndex - 2, 0);
 	}
 
 	private boolean isIntersected(int startPosition, int endPosition, int start, int end) {

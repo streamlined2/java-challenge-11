@@ -8,12 +8,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.Optional;
-import java.util.SortedSet;
-
 import luxoft.ch.compression.CompressionException;
 import luxoft.ch.compression.model.Stash;
-import luxoft.ch.compression.model.Stash.Range;
 
 public class Decompressor {
 
