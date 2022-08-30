@@ -69,8 +69,7 @@ public class Stash implements Iterable<Map.Entry<String, int[]>>, Serializable {
 
 	public String findTokenByStartPosition(int start) {
 		for (var entry : tokenEntries.entrySet()) {
-			OptionalInt pos = IntStream.of(entry.getValue()).filter(position -> position == start).findFirst();
-			if (pos.isPresent()) {
+			if (Arrays.binarySearch(entry.getValue(), start) >= 0) {
 				return entry.getKey();
 			}
 		}
