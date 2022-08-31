@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.SortedSet;
@@ -65,10 +64,11 @@ public class Compressor {
 	}
 
 	private void formSetOfTokensAndChain() {
+		var indices = new ArrayList<Integer>(MIN_NUMBER_OF_TOKEN_INDICES);
 		for (var iter = dictionary.getTokensByTotalSpaceReversed(MIN_TOKEN_LENGTH).iterator(); iter.hasNext();) {
 			Entry<String, List<Integer>> token = iter.next();
 			int tokenEntryCount = 0;
-			var indices = new ArrayList<Integer>(MIN_NUMBER_OF_TOKEN_INDICES);
+			indices.clear();
 			for (var startPosition : token.getValue()) {
 				final int endPosition = getEndPosition(token, startPosition);
 				if (stash.isTokenEntryMayBeApplied(startPosition, endPosition)) {

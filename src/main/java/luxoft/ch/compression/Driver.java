@@ -8,7 +8,8 @@ public class Driver {
 	public static void main(String[] args) {
 		Compressor compressor = new Compressor("real-sample.txt");
 		compressor.compress();
-		//System.out.println("sorted set of tokens:\n" + compressor.getTokens());
+		System.out.println("sorted set of tokens:\n");
+		compressor.getTokens().forEach(System.out::println);
 		//System.out.println("sorted set of ranges:\n" + compressor.getRanges());
 		compressor.save("compressed.data");
 		Decompressor decompressor = new Decompressor("compressed.data");

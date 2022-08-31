@@ -74,7 +74,7 @@ public class Stash implements Iterable<Map.Entry<String, int[]>>, Serializable {
 	}
 
 	public SortedSet<String> getTokens() {
-		return tokenEntries.keySet().stream().collect(Collectors.toCollection(TreeSet::new));
+		return tokenEntries.keySet().stream().sorted().collect(Collectors.toCollection(TreeSet::new));
 	}
 
 	public SortedSet<Range> getRanges() {
