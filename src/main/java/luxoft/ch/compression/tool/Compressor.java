@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.SortedSet;
@@ -17,24 +18,42 @@ import luxoft.ch.compression.model.Stash.Range;
 public class Compressor {
 
 	private static final int MIN_TOKEN_LENGTH = 4;
-	private static final int MIN_TOKEN_ENTRY_COUNT = 2;
+	private static final int DEFAULT_MIN_TOKEN_ENTRY_COUNT = 2;
 	private static final int MIN_NUMBER_OF_TOKEN_INDICES = 50;
 
+	private final int minTokenEntryCount;
 	private final Dictionary dictionary;
 	private final Stash stash;
 
 	public Compressor(String sourceFileName) {
+		this(sourceFileName, DEFAULT_MIN_TOKEN_ENTRY_COUNT);
+	}
+
+	public Compressor(String sourceFileName, int minTokenEntryCount) {
 		stash = new Stash();
 		dictionary = new Dictionary();
 		dictionary.initialize(sourceFileName);
+		this.minTokenEntryCount = minTokenEntryCount;
+	}
+
+	public int getMinTokenEntryCount() {
+		return minTokenEntryCount;
 	}
 
 	public SortedSet<String> getTokens() {
 		return stash.getTokens();
 	}
 
+	public SortedSet<String> getTokens(Comparator<String> comparator) {
+		return stash.getTokens(comparator);
+	}
+
 	public SortedSet<Range> getRanges() {
 		return stash.getRanges();
+	}
+
+	public SortedSet<Range> getRanges(Comparator<Range> comparator) {
+		return stash.getRanges(comparator);
 	}
 
 	public void save(String targetFileName) {
@@ -76,7 +95,7 @@ public class Compressor {
 					tokenEntryCount++;
 				}
 			}
-			if (tokenEntryCount >= MIN_TOKEN_ENTRY_COUNT) {
+			if (tokenEntryCount >= getMinTokenEntryCount()) {
 				stash.add(token.getKey(), indices);
 			}
 		}

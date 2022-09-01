@@ -3,6 +3,7 @@ package luxoft.ch.compression.model;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -74,11 +75,19 @@ public class Stash implements Iterable<Map.Entry<String, int[]>>, Serializable {
 	}
 
 	public SortedSet<String> getTokens() {
-		return tokenEntries.keySet().stream().sorted().collect(Collectors.toCollection(TreeSet::new));
+		return getTokens(Comparator.naturalOrder());
+	}
+
+	public SortedSet<String> getTokens(Comparator<String> comparator) {
+		return tokenEntries.keySet().stream().sorted(comparator).collect(Collectors.toCollection(TreeSet::new));
 	}
 
 	public SortedSet<Range> getRanges() {
-		return tokenEntries.entrySet().stream().flatMap(this::entryIndicesStream).sorted()
+		return getRanges(Comparator.naturalOrder());
+	}
+
+	public SortedSet<Range> getRanges(Comparator<Range> comparator) {
+		return tokenEntries.entrySet().stream().flatMap(this::entryIndicesStream).sorted(comparator)
 				.collect(Collectors.toCollection(TreeSet::new));
 	}
 
