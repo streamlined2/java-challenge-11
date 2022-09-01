@@ -17,7 +17,7 @@ import luxoft.ch.compression.model.Stash.Range;
 
 public class Compressor {
 
-	private static final int MIN_TOKEN_LENGTH = 4;
+	private static final int MIN_TOKEN_LENGTH = 10;
 	private static final int DEFAULT_MIN_TOKEN_ENTRY_COUNT = 2;
 	private static final int MIN_NUMBER_OF_TOKEN_INDICES = 50;
 
@@ -38,6 +38,10 @@ public class Compressor {
 
 	public int getMinTokenEntryCount() {
 		return minTokenEntryCount;
+	}
+
+	public Stash.Statistics getStatistics() {
+		return stash.getStatistics();
 	}
 
 	public SortedSet<String> getTokens() {

@@ -1,5 +1,6 @@
 package luxoft.ch.compression.model;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,12 +54,100 @@ public class Stash implements Iterable<Map.Entry<String, int[]>>, Serializable {
 
 	}
 
-	private final Map<String, int[]> tokenEntries;
-	private final List<char[]> uncompressedRanges;
+	public record Statistics(int tokenCount, int tokenSize, int entryCount, int entrySize, int uncompressedCount,
+			int uncompressedSize) {
+	}
+
+	public Statistics getStatistics() {
+		return new Statistics(getTokenCount(), getTokenSize(), getEntryCount(), getEntrySize(), getUncompressedCount(),
+				getUncompressedSize());
+	}
+
+	private int getTokenCount() {
+		return tokenEntries.size();
+	}
+
+	private int getTokenSize() {
+		int size = 0;
+		for (var key : tokenEntries.keySet()) {
+			size += key.length();
+		}
+		return size;
+	}
+
+	private int getEntryCount() {
+		int count = 0;
+		for (var entry : tokenEntries.entrySet()) {
+			count += entry.getValue().length;
+		}
+		return count;
+	}
+
+	private int getEntrySize() {
+		int size = 0;
+		for (var entry : tokenEntries.entrySet()) {
+			size += entry.getValue().length * entry.getKey().length();
+		}
+		return size;
+	}
+
+	private int getUncompressedCount() {
+		return uncompressedRanges.size();
+	}
+
+	private int getUncompressedSize() {
+		int size = 0;
+		for (var range : uncompressedRanges) {
+			size += range.length;
+		}
+		return size;
+	}
+
+	private Map<String, int[]> tokenEntries;
+	private List<char[]> uncompressedRanges;
 
 	public Stash() {
 		tokenEntries = new HashMap<>();
 		uncompressedRanges = new ArrayList<>();
+	}
+
+	private void readObject(java.io.ObjectInputStream stream) throws IOException, ClassNotFoundException {
+		int tESize = stream.readShort();
+		tokenEntries = new HashMap<>(tESize);
+		for (int k = tESize; k > 0; k--) {
+			String key = stream.readUTF();
+			int entryCount = stream.readByte();
+			int[] entries = new int[entryCount];
+			for (int m = 0; m < entryCount; m++) {
+				entries[m] = stream.readShort();
+			}
+			tokenEntries.put(key, entries);
+		}
+		int uRSize = stream.readShort();
+		uncompressedRanges = new ArrayList<>(uRSize);
+		for (int k = uRSize; k > 0; k--) {
+			String data = stream.readUTF();
+			uncompressedRanges.add(data.toCharArray());
+		}
+	}
+
+	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
+		stream.writeShort(tokenEntries.size());
+		for (var entry : tokenEntries.entrySet()) {
+			stream.writeUTF(entry.getKey());
+			stream.writeByte(entry.getValue().length);
+			for (var index : entry.getValue()) {
+				stream.writeShort(index);
+			}
+		}
+		stream.writeShort(uncompressedRanges.size());
+		for (var range : uncompressedRanges) {
+			StringBuilder sb = new StringBuilder();
+			for (var ch : range) {
+				sb.append(ch);
+			}
+			stream.writeUTF(sb.toString());
+		}
 	}
 
 	public Iterator<char[]> getUncompressedRangesIterator() {

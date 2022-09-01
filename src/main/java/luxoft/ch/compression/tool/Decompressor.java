@@ -2,12 +2,14 @@ package luxoft.ch.compression.tool;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
+
 import luxoft.ch.compression.CompressionException;
 import luxoft.ch.compression.model.Stash;
 
@@ -32,16 +34,16 @@ public class Decompressor {
 	public void save(String targetFileName) {
 		if (stash == null)
 			throw new IllegalStateException("must decompress source data before saving result");
-		try (DataOutputStream outStream = new DataOutputStream(
+		try (Writer writer = new PrintWriter(
 				new BufferedOutputStream(new FileOutputStream(new File(targetFileName))))) {
 			int position = 0;
 			for (var rangeIter = stash.getUncompressedRangesIterator(); rangeIter.hasNext();) {
 				char[] range = rangeIter.next();
-				outStream.writeChars(String.valueOf(range));
+				writer.write(String.valueOf(range));
 				position += range.length;
 				if (rangeIter.hasNext()) {
 					String token = stash.findTokenByStartPosition(position);
-					outStream.writeChars(token);
+					writer.write(token);
 					position += token.length();
 				}
 			}
